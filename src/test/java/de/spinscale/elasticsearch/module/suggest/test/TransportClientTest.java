@@ -5,12 +5,15 @@ import de.spinscale.elasticsearch.action.suggest.suggest.SuggestResponse;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRefreshRequestBuilder;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestRequestBuilder;
 import de.spinscale.elasticsearch.client.action.suggest.SuggestStatisticsRequestBuilder;
+
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.transport.Transport;
 import org.junit.After;
 
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
@@ -84,7 +87,9 @@ public class TransportClientTest extends AbstractSuggestTest {
         SuggestResponse suggestResponse = builder.execute().actionGet();
         assertThat(suggestResponse.getShardFailures(), is(emptyArray()));
 
-        return suggestResponse.suggestions();
+        List<String> list = new LinkedList<String>(suggestResponse.suggestions().keySet());
+        Collections.sort(list);
+        return list;
     }
 
     @Override

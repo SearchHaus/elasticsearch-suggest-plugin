@@ -8,8 +8,11 @@ import de.spinscale.elasticsearch.action.suggest.statistics.SuggestStatisticsReq
 import de.spinscale.elasticsearch.action.suggest.suggest.SuggestAction;
 import de.spinscale.elasticsearch.action.suggest.suggest.SuggestRequest;
 import de.spinscale.elasticsearch.action.suggest.suggest.SuggestResponse;
+
 import org.elasticsearch.common.Strings;
 
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.elasticsearch.test.ElasticsearchIntegrationTest.ClusterScope;
@@ -51,7 +54,9 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
         SuggestResponse suggestResponse = client().execute(SuggestAction.INSTANCE, request).actionGet();
         assertThat(suggestResponse.getShardFailures(), is(emptyArray()));
 
-        return suggestResponse.suggestions();
+        List<String> list = new LinkedList<String>(suggestResponse.suggestions().keySet());
+        Collections.sort(list);
+        return list;
     }
 
     @Override

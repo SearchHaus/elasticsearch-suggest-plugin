@@ -2,6 +2,7 @@ package de.spinscale.elasticsearch.action.suggest.suggest;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.action.support.broadcast.BroadcastShardOperationResponse;
 import org.elasticsearch.common.collect.Lists;
@@ -10,26 +11,26 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 
 public class ShardSuggestResponse extends BroadcastShardOperationResponse {
 
-    private List<String> suggestions;
+    private Map<String,Long> suggestions;
 
     public ShardSuggestResponse() {}
 
-    public ShardSuggestResponse(String index, int shardId, List<String> suggestions) {
+    public ShardSuggestResponse(String index, int shardId, Map<String,Long> suggestions) {
         super(index, shardId);
         this.suggestions = suggestions;
     }
 
-    public List<String> getSuggestions() {
-        return Lists.newArrayList(suggestions);
+    public Map<String,Long> getSuggestions() {
+        return suggestions;
     }
 
-    public List<String> suggestions() {
-        return Lists.newArrayList(suggestions);
+    public Map<String,Long> suggestions() {
+        return suggestions;
     }
 
     @Override public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
-        suggestions = (List<String>) in.readGenericValue();
+        suggestions = (Map<String,Long>) in.readGenericValue();
     }
 
     @Override public void writeTo(StreamOutput out) throws IOException {

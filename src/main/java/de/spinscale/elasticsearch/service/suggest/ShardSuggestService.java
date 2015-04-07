@@ -213,9 +213,9 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
     }
 
     public ShardSuggestResponse suggest(ShardSuggestRequest shardSuggestRequest) {
-        List<String> suggestions;
+        Map<String,Long> suggestions;
         try {
-            suggestions = Lists.newArrayList(getSuggestions(shardSuggestRequest));
+            suggestions = getSuggestions(shardSuggestRequest);
         } catch (IOException e) {
             throw new ElasticsearchException("Error getting suggestions", e);
         }
@@ -238,7 +238,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         return Collections.emptyList();
     }
 
-    private Collection<String> getSuggestions(ShardSuggestRequest shardSuggestRequest) throws IOException {
+    private Map<String,Long> getSuggestions(ShardSuggestRequest shardSuggestRequest) throws IOException {
         List<LookupResult> lookupResults = Lists.newArrayList();
         if ("full".equals(shardSuggestRequest.suggestType())) {
             AnalyzingSuggester analyzingSuggester = analyzingSuggesterCache.getUnchecked(new FieldType(shardSuggestRequest));
@@ -250,18 +250,27 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         } else {
             lookupResults.addAll(lookupCache.getUnchecked(shardSuggestRequest.field())
                     .lookup(shardSuggestRequest.term(), true, shardSuggestRequest.size() + 1));
-            Collection<String> suggestions = Collections2.transform(lookupResults, new LookupResultToStringFunction());
-
+            
+            System.out.println(lookupResults.size());
+            
+            Map<String,Long> suggestions = new HashMap<String,Long>();
+            for (LookupResult result : lookupResults)
+            	suggestions.put(result.key.toString(), result.value);
+            
             float similarity = shardSuggestRequest.similarity();
             if (similarity < 1.0f && suggestions.size() < shardSuggestRequest.size()) {
-                suggestions = Lists.newArrayList(suggestions);
-                suggestions.addAll(getSimilarSuggestions(shardSuggestRequest));
+                suggestions.clear();
+                for (String suggestion : getSimilarSuggestions(shardSuggestRequest))
+                	suggestions.put(suggestion, 0L);
             }
 
             return suggestions;
         }
 
-        return Collections2.transform(lookupResults, new LookupResultToStringFunction());
+        Map<String,Long> suggestions = new HashMap<String,Long>();
+        for (LookupResult result : lookupResults)
+        	suggestions.put(result.key.toString(), result.value);
+        return suggestions;
     }
 
     private class LookupResultToStringFunction implements Function<LookupResult, String> {

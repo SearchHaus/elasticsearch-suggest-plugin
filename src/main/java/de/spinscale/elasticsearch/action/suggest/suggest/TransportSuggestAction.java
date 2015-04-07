@@ -1,6 +1,7 @@
 package de.spinscale.elasticsearch.action.suggest.suggest;
 
 import de.spinscale.elasticsearch.service.suggest.ShardSuggestService;
+
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ShardOperationFailedException;
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
@@ -21,13 +22,21 @@ import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static org.elasticsearch.common.collect.Lists.newArrayList;
 
 public class TransportSuggestAction extends TransportBroadcastOperationAction<SuggestRequest, SuggestResponse, ShardSuggestRequest, ShardSuggestResponse> {
 
+	private static final boolean sortAlpha = true;
+	
     private final IndicesService indicesService;
 
     @Inject public TransportSuggestAction(Settings settings, ThreadPool threadPool,
@@ -55,7 +64,7 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
         int successfulShards = 0;
         int failedShards = 0;
         List<ShardOperationFailedException> shardFailures = null;
-        List<String> items = Lists.newArrayList();
+        Map<String,Long> items = new HashMap<String,Long>();
         for (int i = 0; i < shardsResponses.length(); i++) {
             Object shardResponse = shardsResponses.get(i);
             if (shardResponse == null) {
@@ -68,17 +77,46 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
                 shardFailures.add(new DefaultShardOperationFailedException((BroadcastShardOperationFailedException) shardResponse));
             } else if (shardResponse instanceof ShardSuggestResponse) {
                 ShardSuggestResponse shardSuggestResponse = (ShardSuggestResponse) shardResponse;
-                List<String> shardItems = shardSuggestResponse.suggestions();
-                items.addAll(shardItems);
+                Map<String,Long> shardItems = shardSuggestResponse.suggestions();
+                // add all shard items to items, sum up weights
+                Long prevValue;
+                for (Map.Entry<String,Long> entry : shardItems.entrySet())
+                	if ((prevValue = items.get(entry.getKey())) == null)	// new entry
+                		items.put(entry.getKey(), entry.getValue());
+                	else if (prevValue + entry.getValue() >= prevValue)	// no overflow (assuming non negative weights)
+                		items.put(entry.getKey(), entry.getValue() + prevValue);
+                	else	// overflow
+                		items.put(entry.getKey(), Long.MAX_VALUE);
+
                 successfulShards++;
             } else {
                 successfulShards++;
             }
         }
 
-        List<String> resultItems = ImmutableSortedSet.copyOf(items).asList();
-        return new SuggestResponse(resultItems.subList(0, Math.min(resultItems.size(), request.size())),
-                shardsResponses.length(), successfulShards, failedShards, shardFailures);
+        // sort items
+        Map<String,Long> resultItems = new LinkedHashMap<String,Long>();
+        LinkedList<Map.Entry<String,Long>> list = new LinkedList<Map.Entry<String,Long>>(items.entrySet());
+        if (sortAlpha) {
+    		Collections.sort(list, new Comparator<Map.Entry<String,Long>>() {
+    			@Override
+    			public int compare(Map.Entry<String,Long> o1, Map.Entry<String,Long> o2) {
+    				return o1.getKey().compareTo(o2.getKey());
+    			}
+    		});
+        }
+        else {
+    		Collections.sort(list, new Comparator<Map.Entry<String,Long>>() {
+    			@Override
+    			public int compare(Map.Entry<String,Long> o1, Map.Entry<String,Long> o2) {
+    				return o1.getValue().compareTo(o2.getValue());
+    			}
+    		});
+        }
+		for (Map.Entry<String,Long> entry : list.subList(0, Math.min(list.size(), request.size())))	// sublist
+			resultItems.put(entry.getKey(), entry.getValue());
+        
+        return new SuggestResponse(resultItems, shardsResponses.length(), successfulShards, failedShards, shardFailures);
     }
 
     @Override

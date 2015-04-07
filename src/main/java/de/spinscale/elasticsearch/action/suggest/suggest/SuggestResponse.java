@@ -2,6 +2,7 @@ package de.spinscale.elasticsearch.action.suggest.suggest;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.action.ShardOperationFailedException;
 import org.elasticsearch.action.support.broadcast.BroadcastOperationResponse;
@@ -15,27 +16,27 @@ import static org.elasticsearch.rest.action.support.RestActions.buildBroadcastSh
 
 public class SuggestResponse extends BroadcastOperationResponse implements ToXContent {
 
-    private List<String> suggestions;
+    private Map<String,Long> suggestions;
 
     public SuggestResponse() {
     }
 
-    public SuggestResponse(List<String> suggestions, int totalShards, int successfulShards, int failedShards, List<ShardOperationFailedException> shardFailures) {
+    public SuggestResponse(Map<String,Long> suggestions, int totalShards, int successfulShards, int failedShards, List<ShardOperationFailedException> shardFailures) {
         super(totalShards, successfulShards, failedShards, shardFailures);
         this.suggestions = suggestions;
     }
 
-    public List<String> suggestions() {
-        return Lists.newArrayList(suggestions);
+    public Map<String,Long> suggestions() {
+        return suggestions;
     }
 
-    public List<String>  getSuggestions() {
-        return Lists.newArrayList(suggestions);
+    public Map<String,Long>  getSuggestions() {
+        return suggestions;
     }
 
     @Override public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
-        suggestions = (List<String>) in.readGenericValue();
+        suggestions = (Map<String,Long>) in.readGenericValue();
     }
 
     @Override public void writeTo(StreamOutput out) throws IOException {

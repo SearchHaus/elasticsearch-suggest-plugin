@@ -2,12 +2,15 @@ package de.spinscale.elasticsearch.module.suggest.test;
 
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Response;
+
 import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
+
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.collect.ImmutableSortedSet;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
@@ -22,6 +25,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -178,7 +182,8 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
         XContentParser parser = JsonXContent.jsonXContent.createParser(response);
         Map<String, Object> jsonResponse = parser.map();
         assertThat(jsonResponse, hasKey("suggestions"));
-        return (List<String>) jsonResponse.get("suggestions");
+        return ImmutableSortedSet.copyOf(new LinkedList<String>(((Map<String,Long>)jsonResponse.get("suggestions")).keySet())).asList();
+        //TODO hier weiter
     }
 
 }
