@@ -62,6 +62,10 @@ public class RestSuggestAction extends BaseRestHandler {
             suggestRequest.similarity(XContentMapValues.nodeFloatValue(parserMap.get("similarity"), 1.0f));
             suggestRequest.size(XContentMapValues.nodeIntegerValue(parserMap.get("size"), 10));
 
+            if (parserMap.containsKey("sortByFrequency"))
+            	suggestRequest.sortByFrequency(XContentMapValues.nodeBooleanValue(parserMap.get("sortByFrequency")));
+            // TODO the other boolean is missing here as well?
+            
             client.execute(SuggestAction.INSTANCE, suggestRequest, new RestToXContentListener<SuggestResponse>(channel));
         } catch (IOException e) {
             try {

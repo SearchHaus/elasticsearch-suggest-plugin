@@ -2,6 +2,7 @@ package de.spinscale.elasticsearch.module.suggest.test;
 
 import de.spinscale.elasticsearch.action.suggest.statistics.FstStats;
 import de.spinscale.elasticsearch.plugin.suggest.SuggestPlugin;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -41,7 +42,10 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
         createIndexWithProductsMapping(index);
     }
 
-    abstract public List<String> getSuggestions(SuggestionQuery suggestionQuery) throws Exception;
+    public List<String> getSuggestions(SuggestionQuery suggestionQuery) throws Exception {
+    	return Lists.newArrayList(getWeightedSuggestions(suggestionQuery).keySet());
+    }
+    abstract public Map<String,Long> getWeightedSuggestions(SuggestionQuery suggestionQuery) throws Exception;
     abstract public void refreshAllSuggesters() throws Exception;
     abstract public void refreshIndexSuggesters(String index) throws Exception;
     abstract public void refreshFieldSuggesters(String index, String field) throws Exception;
@@ -305,6 +309,63 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
         List<FstStats.FstIndexShardStats> allStats = Lists.newArrayList(filledFstStats.getStats());
         assertThat(allStats.get(0).getShardId().id(), greaterThanOrEqualTo(0));
         assertThat(getFstSizeSum(filledFstStats), greaterThan(0L));
+    }
+    
+    @Test
+    public void testFrequentTermsHaveHigherWeight() throws Exception {
+        List<Map<String, Object>> products = createProducts("ProductName", "BMW 318", "BMW 318", "BMW 528", "BMW M3",
+                "the BMW 320", "VW Jetta", "BMW M3", "BMW M3", "BMW M3", "BMW M3", "BMW M3", "BMW M3");
+        indexProducts(products);
+
+        SuggestionQuery query = new SuggestionQuery(index, type, "ProductName.keyword", "b")
+                .suggestType("full").analyzer("simple").sortByFrequency().size(10);
+        Map<String,Long> suggestions = getWeightedSuggestions(query);
+        
+        System.out.println(suggestions);
+        
+        assertTrue(suggestions.get("BMW M3") > suggestions.get("BMW 318"));
+        assertTrue(suggestions.get("BMW M3") > suggestions.get("BMW 528"));
+        assertTrue(suggestions.get("BMW 318") > suggestions.get("BMW 528"));
+        
+        assertSuggestions(Lists.newArrayList(suggestions.keySet()), "BMW M3", "BMW 318", "BMW 528");
+    }
+    
+    @Test
+    public void testFrequencyWorksWithFuzzy() throws Exception {
+       List<Map<String, Object>> products = createProducts("ProductName", "BMW 318", "BMW 318", "BMW 528", "BMW M3",
+                "the BMW 320", "VW Jetta", "BMW M3", "BMW M3", "BMW M3", "BMW M3", "BMW M3", "BMW M3");
+        indexProducts(products);
+
+        SuggestionQuery query = new SuggestionQuery(index, type, "ProductName.keyword", "b")
+                .suggestType("fuzzy").analyzer("standard").sortByFrequency().size(10);
+        Map<String,Long> suggestions = getWeightedSuggestions(query);
+        
+        System.out.println(suggestions);
+        
+        assertTrue(suggestions.get("BMW M3") > suggestions.get("BMW 318"));
+        assertTrue(suggestions.get("BMW M3") > suggestions.get("BMW 528"));
+        assertTrue(suggestions.get("BMW 318") > suggestions.get("BMW 528"));
+        
+        assertSuggestions(Lists.newArrayList(suggestions.keySet()), "BMW M3", "BMW 318", "BMW 528");
+    }
+    
+    @Test
+    public void testFrequencyWorksWithStop() throws Exception {
+       List<Map<String, Object>> products = createProducts("ProductName", "BMW 318", "BMW 318", "BMW 528", "BMW M3",
+                "the BMW 320", "VW Jetta", "BMW M3", "BMW M3", "BMW M3", "BMW M3", "BMW M3", "BMW M3");
+        indexProducts(products);
+
+        SuggestionQuery query = new SuggestionQuery(index, type, "ProductName.keyword", "b")
+                .suggestType("full").indexAnalyzer("stop").sortByFrequency().queryAnalyzer("stop").size(10);
+        Map<String,Long> suggestions = getWeightedSuggestions(query);
+        
+        System.out.println(suggestions);
+        
+        assertTrue(suggestions.get("BMW M3") > suggestions.get("BMW 318"));
+        assertTrue(suggestions.get("BMW M3") > suggestions.get("BMW 528"));
+        assertTrue(suggestions.get("BMW 318") > suggestions.get("BMW 528"));
+        
+        assertSuggestions(Lists.newArrayList(suggestions.keySet()), "BMW M3", "BMW 318", "BMW 528", "the BMW 320");
     }
 
     private long getFstSizeSum(FstStats fstStats) {

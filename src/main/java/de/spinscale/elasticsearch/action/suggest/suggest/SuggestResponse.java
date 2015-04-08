@@ -26,14 +26,22 @@ public class SuggestResponse extends BroadcastOperationResponse implements ToXCo
         this.suggestions = suggestions;
     }
 
-    public Map<String,Long> suggestions() {
-        return suggestions;
+    public List<String> suggestions() {
+        return Lists.newArrayList(suggestions.keySet());
     }
 
-    public Map<String,Long>  getSuggestions() {
+    public List<String>  getSuggestions() {
+        return Lists.newArrayList(suggestions.keySet());
+    }
+    
+    public Map<String,Long>  getWeightedSuggestions() {
         return suggestions;
     }
-
+    
+    public Map<String,Long>  weightedSuggestions() {
+        return suggestions;
+    }
+    
     @Override public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
         suggestions = (Map<String,Long>) in.readGenericValue();

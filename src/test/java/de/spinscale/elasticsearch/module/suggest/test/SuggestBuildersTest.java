@@ -10,6 +10,7 @@ import org.elasticsearch.common.Strings;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.is;
@@ -20,10 +21,11 @@ import static org.elasticsearch.test.ElasticsearchIntegrationTest.Scope;
 public class SuggestBuildersTest extends AbstractSuggestTest {
 
     @Override
-    public List<String> getSuggestions(SuggestionQuery suggestionQuery) throws Exception {
+    public Map<String,Long> getWeightedSuggestions(SuggestionQuery suggestionQuery) throws Exception {
         SuggestRequestBuilder builder = new SuggestRequestBuilder(client())
                 .setIndices(suggestionQuery.index)
                 .field(suggestionQuery.field)
+                .sortByFrequency(suggestionQuery.sortByFrequency)
                 .term(suggestionQuery.term);
 
         if (suggestionQuery.size != null) {
@@ -49,8 +51,7 @@ public class SuggestBuildersTest extends AbstractSuggestTest {
         SuggestResponse suggestResponse = builder.execute().actionGet();
         assertThat(suggestResponse.getShardFailures(), is(emptyArray()));
 
-        List<String> list = new LinkedList<String>(suggestResponse.suggestions().keySet());
-        return list;
+        return suggestResponse.weightedSuggestions();
     }
 
     @Override

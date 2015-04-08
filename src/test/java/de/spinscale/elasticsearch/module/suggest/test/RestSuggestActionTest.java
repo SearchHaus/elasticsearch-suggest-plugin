@@ -24,6 +24,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -76,7 +77,7 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
     }
 
     @Override
-    public List<String> getSuggestions(SuggestionQuery suggestionQuery) throws Exception {
+    public Map<String,Long> getWeightedSuggestions(SuggestionQuery suggestionQuery) throws Exception {
         String json = createJSONQuery(suggestionQuery);
 
         String url = "http://localhost:" + port + "/" + suggestionQuery.index + "/" + suggestionQuery.type + "/__suggest";
@@ -171,22 +172,24 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
             query.append(String.format(Locale.ROOT, ", \"analyzer\": \"%s\"", suggestionQuery.analyzer));
         }
         query.append(String.format(Locale.ROOT, ", \"preserve_position_increments\": \"%s\"", suggestionQuery.preservePositionIncrements));
+        query.append(String.format(Locale.ROOT, ", \"sortByFrequency\": \"%s\"", suggestionQuery.sortByFrequency));
         query.append("}");
 
         return query.toString();
     }
 
     @SuppressWarnings("unchecked")
-    private List<String> getSuggestionsFromResponse(String response) throws IOException {
+    private Map<String,Long> getSuggestionsFromResponse(String response) throws IOException {
         XContentParser parser = JsonXContent.jsonXContent.createParser(response);
         Map<String, Object> jsonResponse = parser.mapOrdered();
         assertThat(jsonResponse, hasKey("suggestions"));
-        Map<String,Long> map = (Map<String,Long>)jsonResponse.get("suggestions");
+
+        Map<String,Integer> mapParsed = (Map<String,Integer>)jsonResponse.get("suggestions");
+        Map<String,Long> mapOut = new LinkedHashMap<String,Long>();
+        for (Map.Entry<String, Integer> entry : mapParsed.entrySet())
+        	mapOut.put(entry.getKey(), new Long(entry.getValue()));
         
-        System.out.println(response);
-        System.out.println(map);
-        
-        return new LinkedList<String>(map.keySet());
+        return mapOut;
     }
 
 }

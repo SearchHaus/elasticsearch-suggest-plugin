@@ -139,6 +139,7 @@ public class SuggestRequest extends BroadcastOperationRequest {
         queryAnalyzer = in.readOptionalString();
         indexAnalyzer = in.readOptionalString();
         types = in.readStringArray();
+        sortByFrequency = in.readBoolean();
     }
 
     @Override public void writeTo(StreamOutput out) throws IOException {
@@ -151,10 +152,12 @@ public class SuggestRequest extends BroadcastOperationRequest {
         out.writeOptionalString(queryAnalyzer);
         out.writeOptionalString(indexAnalyzer);
         out.writeStringArray(types);
+        out.writeBoolean(sortByFrequency);
+        //TODO fehlt hier auch der andere boolean?
     }
 
     @Override public String toString() {
-        return String.format(Locale.ROOT, "[%s] %s, field[%s], term[%s], size[%s], similarity[%s], suggestType[%s], indexAnalyzer[%s], queryAnalyzer[%s]",
-                Arrays.toString(indices), Arrays.toString(types), field, term, size, similarity, suggestType, indexAnalyzer, queryAnalyzer);
+        return String.format(Locale.ROOT, "[%s] %s, field[%s], term[%s], size[%s], similarity[%s], suggestType[%s], indexAnalyzer[%s], queryAnalyzer[%s], sortByFrequency[%s]",
+                Arrays.toString(indices), Arrays.toString(types), field, term, size, similarity, suggestType, indexAnalyzer, queryAnalyzer, sortByFrequency);
     }
 }

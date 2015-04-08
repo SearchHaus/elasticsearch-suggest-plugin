@@ -13,6 +13,7 @@ import org.elasticsearch.common.Strings;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import static org.elasticsearch.test.ElasticsearchIntegrationTest.ClusterScope;
 import static org.elasticsearch.test.ElasticsearchIntegrationTest.Scope;
@@ -23,11 +24,12 @@ import static org.hamcrest.Matchers.is;
 public class TransportSuggestActionTest extends AbstractSuggestTest {
 
     @Override
-    public List<String> getSuggestions(SuggestionQuery suggestionQuery) throws Exception {
+    public Map<String,Long> getWeightedSuggestions(SuggestionQuery suggestionQuery) throws Exception {
         SuggestRequest request = new SuggestRequest(suggestionQuery.index);
 
         request.term(suggestionQuery.term);
         request.field(suggestionQuery.field);
+        request.sortByFrequency(suggestionQuery.sortByFrequency);
 
         if (suggestionQuery.size != null) {
             request.size(suggestionQuery.size);
@@ -53,8 +55,7 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
         SuggestResponse suggestResponse = client().execute(SuggestAction.INSTANCE, request).actionGet();
         assertThat(suggestResponse.getShardFailures(), is(emptyArray()));
 
-        List<String> list = new LinkedList<String>(suggestResponse.suggestions().keySet());
-        return list;
+        return suggestResponse.weightedSuggestions();
     }
 
     @Override
