@@ -22,6 +22,7 @@ public class SuggestRequest extends BroadcastOperationRequest {
     private String queryAnalyzer;
     private String indexAnalyzer;
     private boolean preservePositionIncrements = true;
+    private boolean sortByFrequency = false;
 
     public SuggestRequest() {
     }
@@ -30,6 +31,14 @@ public class SuggestRequest extends BroadcastOperationRequest {
         super(indices);
     }
 
+    public void sortByFrequency(boolean sortByFrequency) {
+    	this.sortByFrequency = sortByFrequency;
+    }
+    
+    public boolean sortByFrequency() {
+    	return this.sortByFrequency;
+    }
+    
     public int size() {
         return size;
     }

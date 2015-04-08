@@ -346,7 +346,7 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
         return getSuggestions(new SuggestionQuery(index, type, field, term).size(size).similarity(similarity));
     }
 
-    private void assertSuggestions(List<String> suggestions, String ... terms) {
+    protected void assertSuggestions(List<String> suggestions, String ... terms) {
         String msg = String.format(Locale.ROOT, "%s should have size %s, content %s", suggestions, terms.length, Arrays.asList(terms));
         assertThat(msg, suggestions, hasSize(terms.length));
         assertThat("Suggestions are: " + suggestions, suggestions, contains(terms));
@@ -414,7 +414,7 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
         return products;
     }
 
-    private List<Map<String, Object>> createProducts(String fieldName, String ... fields) {
+    protected List<Map<String, Object>> createProducts(String fieldName, String ... fields) {
         List<Map<String, Object>> products = createProducts(fields.length);
 
         for (int i = 0 ; i < fields.length ; i++) {

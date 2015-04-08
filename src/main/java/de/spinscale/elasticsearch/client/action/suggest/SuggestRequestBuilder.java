@@ -68,4 +68,9 @@ public class SuggestRequestBuilder extends ActionRequestBuilder<SuggestRequest, 
         request.preservePositionIncrements(preservePositionIncrements);
         return this;
     }
+    
+    public SuggestRequestBuilder sortByFrequency(boolean sortByFrequency) {
+        request.sortByFrequency(sortByFrequency);
+        return this;
+    }
 }

@@ -13,8 +13,6 @@ import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.routing.GroupShardsIterator;
 import org.elasticsearch.cluster.routing.ShardRouting;
-import org.elasticsearch.common.collect.ImmutableSortedSet;
-import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.service.IndexService;
@@ -35,8 +33,6 @@ import static org.elasticsearch.common.collect.Lists.newArrayList;
 
 public class TransportSuggestAction extends TransportBroadcastOperationAction<SuggestRequest, SuggestResponse, ShardSuggestRequest, ShardSuggestResponse> {
 
-	private static final boolean sortAlpha = true;
-	
     private final IndicesService indicesService;
 
     @Inject public TransportSuggestAction(Settings settings, ThreadPool threadPool,
@@ -94,10 +90,10 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
             }
         }
 
-        // sort items
+        // sort items ascending alphabetically or descending by weights
         Map<String,Long> resultItems = new LinkedHashMap<String,Long>();
         LinkedList<Map.Entry<String,Long>> list = new LinkedList<Map.Entry<String,Long>>(items.entrySet());
-        if (sortAlpha) {
+        if (!request.sortByFrequency()) {
     		Collections.sort(list, new Comparator<Map.Entry<String,Long>>() {
     			@Override
     			public int compare(Map.Entry<String,Long> o1, Map.Entry<String,Long> o2) {
@@ -109,7 +105,7 @@ public class TransportSuggestAction extends TransportBroadcastOperationAction<Su
     		Collections.sort(list, new Comparator<Map.Entry<String,Long>>() {
     			@Override
     			public int compare(Map.Entry<String,Long> o1, Map.Entry<String,Long> o2) {
-    				return o1.getValue().compareTo(o2.getValue());
+    				return o2.getValue().compareTo(o1.getValue());
     			}
     		});
         }

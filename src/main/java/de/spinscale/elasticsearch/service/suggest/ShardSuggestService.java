@@ -19,13 +19,11 @@ import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.base.Function;
 import org.elasticsearch.common.base.Joiner;
 import org.elasticsearch.common.base.Objects;
 import org.elasticsearch.common.cache.CacheBuilder;
 import org.elasticsearch.common.cache.CacheLoader;
 import org.elasticsearch.common.cache.LoadingCache;
-import org.elasticsearch.common.collect.Collections2;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.internal.ToStringBuilder;
@@ -251,8 +249,6 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             lookupResults.addAll(lookupCache.getUnchecked(shardSuggestRequest.field())
                     .lookup(shardSuggestRequest.term(), true, shardSuggestRequest.size() + 1));
             
-            System.out.println(lookupResults.size());
-            
             Map<String,Long> suggestions = new HashMap<String,Long>();
             for (LookupResult result : lookupResults)
             	suggestions.put(result.key.toString(), result.value);
@@ -273,12 +269,12 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         return suggestions;
     }
 
-    private class LookupResultToStringFunction implements Function<LookupResult, String> {
-        @Override
-        public String apply(LookupResult result) {
-            return result.key.toString();
-        }
-    }
+//    private class LookupResultToStringFunction implements Function<LookupResult, String> {
+//        @Override
+//        public String apply(LookupResult result) {
+//            return result.key.toString();
+//        }
+//    }
 
     public void resetIndexReader() {
         IndexReader currentIndexReader = null;

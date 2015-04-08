@@ -10,7 +10,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.ImmutableSortedSet;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
@@ -73,7 +72,7 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
         String response = httpClient.prepareGet("http://localhost:" + port + "/"+ index +"/product/__suggest?" + queryString).
                 execute().get().getResponseBody();
         assertThat(response, startsWith("mycallback({\"_shards\":{\"total\""));
-        assertThat(response, endsWith("\"suggestions\":[\"foobar\"]});"));
+        assertThat(response, endsWith("\"suggestions\":{\"foobar\":0}});"));
     }
 
     @Override
@@ -180,10 +179,14 @@ public class RestSuggestActionTest extends AbstractSuggestTest {
     @SuppressWarnings("unchecked")
     private List<String> getSuggestionsFromResponse(String response) throws IOException {
         XContentParser parser = JsonXContent.jsonXContent.createParser(response);
-        Map<String, Object> jsonResponse = parser.map();
+        Map<String, Object> jsonResponse = parser.mapOrdered();
         assertThat(jsonResponse, hasKey("suggestions"));
-        return ImmutableSortedSet.copyOf(new LinkedList<String>(((Map<String,Long>)jsonResponse.get("suggestions")).keySet())).asList();
-        //TODO hier weiter
+        Map<String,Long> map = (Map<String,Long>)jsonResponse.get("suggestions");
+        
+        System.out.println(response);
+        System.out.println(map);
+        
+        return new LinkedList<String>(map.keySet());
     }
 
 }

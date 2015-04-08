@@ -18,7 +18,8 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
     private String queryAnalyzer;
     private String indexAnalyzer;
     private boolean preservePositionIncrements = true;
-
+    private boolean sortByFrequency = false;
+    
     public ShardSuggestRequest() {}
 
     public ShardSuggestRequest(String index, int shardId, SuggestRequest request) {
@@ -32,6 +33,7 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
         queryAnalyzer = request.queryAnalyzer();
         indexAnalyzer = request.indexAnalyzer();
         preservePositionIncrements = request.preservePositionIncrements();
+        sortByFrequency = request.sortByFrequency();
     }
 
     public int size() {
@@ -42,6 +44,22 @@ public class ShardSuggestRequest extends BroadcastShardOperationRequest {
         this.size = size;
     }
 
+    public void sortByFrequency() {
+    	this.sortByFrequency = true;
+    }
+    
+    public void sortAlphabetically() {
+    	this.sortByFrequency = false;
+    }
+    
+    public boolean isSortedByFrequency() {
+    	return this.sortByFrequency;
+    }
+    
+    public boolean isSortedAlphabetically() {
+    	return !this.sortByFrequency;
+    }
+    
     public String field() {
         return field;
     }

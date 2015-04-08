@@ -11,7 +11,6 @@ import de.spinscale.elasticsearch.action.suggest.suggest.SuggestResponse;
 
 import org.elasticsearch.common.Strings;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -55,7 +54,6 @@ public class TransportSuggestActionTest extends AbstractSuggestTest {
         assertThat(suggestResponse.getShardFailures(), is(emptyArray()));
 
         List<String> list = new LinkedList<String>(suggestResponse.suggestions().keySet());
-        Collections.sort(list);
         return list;
     }
 

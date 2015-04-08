@@ -8,7 +8,6 @@ import de.spinscale.elasticsearch.client.action.suggest.SuggestStatisticsRequest
 
 import org.elasticsearch.common.Strings;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -51,7 +50,6 @@ public class SuggestBuildersTest extends AbstractSuggestTest {
         assertThat(suggestResponse.getShardFailures(), is(emptyArray()));
 
         List<String> list = new LinkedList<String>(suggestResponse.suggestions().keySet());
-        Collections.sort(list);
         return list;
     }
 

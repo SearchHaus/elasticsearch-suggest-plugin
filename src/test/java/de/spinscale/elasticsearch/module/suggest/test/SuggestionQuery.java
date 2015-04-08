@@ -15,6 +15,7 @@ public class SuggestionQuery {
     public Float similarity;
     public String analyzer;
     public boolean preservePositionIncrements = true;
+    public boolean sortByFrequency = false;
 
     public SuggestionQuery(String index, String type, String field, String term) {
         this.index = index;
@@ -64,11 +65,23 @@ public class SuggestionQuery {
         if (indexAnalyzer!= null) sb.append(String.format(Locale.ROOT, " indexAnalyzer[%s]", indexAnalyzer));
         if (queryAnalyzer != null) sb.append(String.format(Locale.ROOT, " queryAnalyzer[%s]", queryAnalyzer));
         sb.append(String.format(Locale.ROOT, " preservePositionIncrements[%s]", preservePositionIncrements));
+        if (sortByFrequency) sb.append(" sorting by frequency");
+        else sb.append(" sorting alphabetically");
         return sb.toString();
     }
 
     public SuggestionQuery preservePositionIncrements(boolean preservePositionIncrements) {
         this.preservePositionIncrements = preservePositionIncrements;
         return this;
+    }
+    
+    public SuggestionQuery sortByFrequency() {
+    	this.sortByFrequency = true;
+    	return this;
+    }
+    
+    public SuggestionQuery sortAlphabetically() {
+    	this.sortByFrequency = false;
+    	return this;
     }
 }

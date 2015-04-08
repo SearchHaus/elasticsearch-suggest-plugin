@@ -12,7 +12,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.transport.Transport;
 import org.junit.After;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -88,7 +87,6 @@ public class TransportClientTest extends AbstractSuggestTest {
         assertThat(suggestResponse.getShardFailures(), is(emptyArray()));
 
         List<String> list = new LinkedList<String>(suggestResponse.suggestions().keySet());
-        Collections.sort(list);
         return list;
     }
 
