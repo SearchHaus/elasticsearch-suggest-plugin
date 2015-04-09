@@ -102,35 +102,24 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                 }
         );
 
-        if (useWfst) {
-            lookupCache = CacheBuilder.newBuilder().build(
-                    new CacheLoader<String, Lookup>() {
-                        @Override
-                        public WFSTCompletionLookup load(String field) throws Exception {
-                            WFSTCompletionLookup lookup = new WFSTCompletionLookup(false);
-                            lookup.build(dictCache.getUnchecked(field));
-                            return lookup;
-                        }
+        lookupCache = CacheBuilder.newBuilder().build(
+                new CacheLoader<String, Lookup>() {
+                    @Override
+                    public Lookup load(String field) throws Exception {
+                        Lookup lookup;
+                      	if (useWfst)
+                          	lookup = new WFSTCompletionLookup(false);
+                       	else
+                       		if (buckets <= 255 && buckets >= 0)
+                           		lookup = new FSTCompletionLookup(buckets, true);
+                           	else
+                           		lookup = new FSTCompletionLookup(10, true);
+                       	
+                       	lookup.build(dictCache.getUnchecked(field));
+                        return lookup;
                     }
-            );
-        }
-        else {
-            lookupCache = CacheBuilder.newBuilder().build(
-                    new CacheLoader<String, Lookup>() {
-                        @Override
-                        public FSTCompletionLookup load(String field) throws Exception {
-                        	FSTCompletionLookup lookup;
-                        	if (buckets <= 255 && buckets >= 0)
-                        		lookup = new FSTCompletionLookup(buckets, true);
-                        	else
-                        		lookup = new FSTCompletionLookup(10, true);
-                            lookup.build(dictCache.getUnchecked(field));
-                            return lookup;
-                        }
-                    }
-            );
-        }
-
+                }
+        );
 
         analyzingSuggesterCache = CacheBuilder.newBuilder().build(
                 new AbstractCacheLoaderSuggester.CacheLoaderAnalyzingSuggester(mapperService, analysisService, dictCache));
