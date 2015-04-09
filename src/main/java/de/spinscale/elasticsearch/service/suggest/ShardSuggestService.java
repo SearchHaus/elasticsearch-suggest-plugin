@@ -68,7 +68,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         super(shardId, indexSettings);
         final int buckets = indexSettings.getAsInt("index.suggesting.number_of_buckets", 10);
         this.indexShard = indexShard;
-if (buckets != 10) System.out.println("###############################");
+
         ramDirectoryCache = CacheBuilder.newBuilder().build(
                 new CacheLoader<String, RAMDirectory>() {
                     @Override
