@@ -55,7 +55,6 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
     private final ReentrantLock lock = new ReentrantLock();
     private IndexReader indexReader;
     private final LoadingCache<String, FSTCompletionLookup> lookupCache;
-//    private final LoadingCache<String, WFSTCompletionLookup> lookupCache;
     private final LoadingCache<FieldType, AnalyzingSuggester> analyzingSuggesterCache;
     private final LoadingCache<FieldType, FuzzySuggester> fuzzySuggesterCache;
     private final LoadingCache<String, HighFrequencyDictionary> dictCache;
@@ -103,19 +102,11 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                 new CacheLoader<String, FSTCompletionLookup>() {
                     @Override
                     public FSTCompletionLookup load(String field) throws Exception {
-                        FSTCompletionLookup lookup = new FSTCompletionLookup(buckets, true);	//TODO hier bucketzahl ändern
+                        FSTCompletionLookup lookup = new FSTCompletionLookup(buckets, true);
                         lookup.build(dictCache.getUnchecked(field));
                         return lookup;
                     }
                 }
-//                new CacheLoader<String, WFSTCompletionLookup>() {
-//                    @Override
-//                    public WFSTCompletionLookup load(String field) throws Exception {
-//                        WFSTCompletionLookup lookup = new WFSTCompletionLookup();
-//                        lookup.build(dictCache.getUnchecked(field));
-//                        return lookup;
-//                    }
-//                }
         );
 
         analyzingSuggesterCache = CacheBuilder.newBuilder().build(
@@ -152,7 +143,6 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
             }
 
             FSTCompletionLookup lookup = lookupCache.getIfPresent(field);
-//            WFSTCompletionLookup lookup = lookupCache.getIfPresent(field);
             if (lookup != null) lookupCache.refresh(field);
 
             for (FieldType fieldType : analyzingSuggesterCache.asMap().keySet()) {
@@ -280,13 +270,6 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
         	suggestions.put(result.key.toString(), result.value);
         return suggestions;
     }
-
-//    private class LookupResultToStringFunction implements Function<LookupResult, String> {
-//        @Override
-//        public String apply(LookupResult result) {
-//            return result.key.toString();
-//        }
-//    }
 
     public void resetIndexReader() {
         IndexReader currentIndexReader = null;
