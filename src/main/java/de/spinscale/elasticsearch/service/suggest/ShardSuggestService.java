@@ -16,7 +16,6 @@ import org.apache.lucene.search.suggest.Lookup.LookupResult;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
 import org.apache.lucene.search.suggest.fst.FSTCompletionLookup;
-import org.apache.lucene.search.suggest.fst.WFSTCompletionLookup;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
 import org.elasticsearch.ElasticsearchException;
@@ -67,13 +66,9 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
     public ShardSuggestService(ShardId shardId, @IndexSettings Settings indexSettings, IndexShard indexShard,
                                final AnalysisService analysisService, final MapperService mapperService) {
         super(shardId, indexSettings);
-        
-//        System.out.println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-//        System.out.println(indexSettings.getAsMap());
-        //TODO get info about number of buckets here
-        
+        final int buckets = indexSettings.getAsInt("index.suggesting.number_of_buckets", 10);
         this.indexShard = indexShard;
-
+if (buckets != 10) System.out.println("###############################");
         ramDirectoryCache = CacheBuilder.newBuilder().build(
                 new CacheLoader<String, RAMDirectory>() {
                     @Override
@@ -108,7 +103,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                 new CacheLoader<String, FSTCompletionLookup>() {
                     @Override
                     public FSTCompletionLookup load(String field) throws Exception {
-                        FSTCompletionLookup lookup = new FSTCompletionLookup(10, true);	//TODO hier bucketzahl ändern
+                        FSTCompletionLookup lookup = new FSTCompletionLookup(buckets, true);	//TODO hier bucketzahl ändern
                         lookup.build(dictCache.getUnchecked(field));
                         return lookup;
                     }

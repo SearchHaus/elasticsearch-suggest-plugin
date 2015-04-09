@@ -1,11 +1,9 @@
 package de.spinscale.elasticsearch.action.suggest.suggest;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.action.support.broadcast.BroadcastShardOperationResponse;
-import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 

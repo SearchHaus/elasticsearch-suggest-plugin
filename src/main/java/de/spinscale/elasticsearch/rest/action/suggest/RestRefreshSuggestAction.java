@@ -11,7 +11,6 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.rest.*;
-import org.elasticsearch.rest.action.support.AcknowledgedRestListener;
 import org.elasticsearch.rest.action.support.RestToXContentListener;
 
 import java.io.IOException;
