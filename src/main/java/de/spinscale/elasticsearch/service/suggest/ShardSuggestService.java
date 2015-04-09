@@ -12,10 +12,12 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.search.spell.HighFrequencyDictionary;
 import org.apache.lucene.search.spell.SpellChecker;
+import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.search.suggest.Lookup.LookupResult;
 import org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester;
 import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
 import org.apache.lucene.search.suggest.fst.FSTCompletionLookup;
+import org.apache.lucene.search.suggest.fst.WFSTCompletionLookup;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
 import org.elasticsearch.ElasticsearchException;
@@ -54,18 +56,20 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
 
     private final ReentrantLock lock = new ReentrantLock();
     private IndexReader indexReader;
-    private final LoadingCache<String, FSTCompletionLookup> lookupCache;
+    private final LoadingCache<String, Lookup> lookupCache;
     private final LoadingCache<FieldType, AnalyzingSuggester> analyzingSuggesterCache;
     private final LoadingCache<FieldType, FuzzySuggester> fuzzySuggesterCache;
     private final LoadingCache<String, HighFrequencyDictionary> dictCache;
     private final LoadingCache<String, SpellChecker> spellCheckerCache;
     private final LoadingCache<String, RAMDirectory> ramDirectoryCache;
-
+    private final boolean useWfst;
     @Inject
     public ShardSuggestService(ShardId shardId, @IndexSettings Settings indexSettings, IndexShard indexShard,
                                final AnalysisService analysisService, final MapperService mapperService) {
         super(shardId, indexSettings);
-        final int buckets = indexSettings.getAsInt("index.suggesting.number_of_buckets", 10);
+        final int buckets = indexSettings.getAsInt("index.suggest.number_of_buckets", 10);
+        useWfst = indexSettings.getAsBoolean("index.suggest.use_wfst", false);
+        
         this.indexShard = indexShard;
 
         ramDirectoryCache = CacheBuilder.newBuilder().build(
@@ -98,16 +102,35 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                 }
         );
 
-        lookupCache = CacheBuilder.newBuilder().build(
-                new CacheLoader<String, FSTCompletionLookup>() {
-                    @Override
-                    public FSTCompletionLookup load(String field) throws Exception {
-                        FSTCompletionLookup lookup = new FSTCompletionLookup(buckets, true);
-                        lookup.build(dictCache.getUnchecked(field));
-                        return lookup;
+        if (useWfst) {
+            lookupCache = CacheBuilder.newBuilder().build(
+                    new CacheLoader<String, Lookup>() {
+                        @Override
+                        public WFSTCompletionLookup load(String field) throws Exception {
+                            WFSTCompletionLookup lookup = new WFSTCompletionLookup(false);
+                            lookup.build(dictCache.getUnchecked(field));
+                            return lookup;
+                        }
                     }
-                }
-        );
+            );
+        }
+        else {
+            lookupCache = CacheBuilder.newBuilder().build(
+                    new CacheLoader<String, Lookup>() {
+                        @Override
+                        public FSTCompletionLookup load(String field) throws Exception {
+                        	FSTCompletionLookup lookup;
+                        	if (buckets <= 255 && buckets >= 0)
+                        		lookup = new FSTCompletionLookup(buckets, true);
+                        	else
+                        		lookup = new FSTCompletionLookup(10, true);
+                            lookup.build(dictCache.getUnchecked(field));
+                            return lookup;
+                        }
+                    }
+            );
+        }
+
 
         analyzingSuggesterCache = CacheBuilder.newBuilder().build(
                 new AbstractCacheLoaderSuggester.CacheLoaderAnalyzingSuggester(mapperService, analysisService, dictCache));
@@ -142,7 +165,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                 }
             }
 
-            FSTCompletionLookup lookup = lookupCache.getIfPresent(field);
+            Lookup lookup = lookupCache.getIfPresent(field);
             if (lookup != null) lookupCache.refresh(field);
 
             for (FieldType fieldType : analyzingSuggesterCache.asMap().keySet()) {
@@ -248,8 +271,7 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                     .lookup(shardSuggestRequest.term(), false, shardSuggestRequest.size()));
 
         } else {
-            lookupResults.addAll(lookupCache.getUnchecked(shardSuggestRequest.field())
-                    .lookup(shardSuggestRequest.term(), true, shardSuggestRequest.size() + 1));
+        	lookupResults.addAll(lookupCache.getUnchecked(shardSuggestRequest.field()).lookup(shardSuggestRequest.term(), !useWfst, shardSuggestRequest.size() + 1));
             
             Map<String,Long> suggestions = new HashMap<String,Long>();
             for (LookupResult result : lookupResults)
