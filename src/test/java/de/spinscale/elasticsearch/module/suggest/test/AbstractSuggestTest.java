@@ -313,21 +313,20 @@ public abstract class AbstractSuggestTest extends ElasticsearchIntegrationTest {
     
     @Test
     public void testFrequentTermsHaveHigherWeight() throws Exception {
-        List<Map<String, Object>> products = createProducts("ProductName", "BMW 318", "BMW 318", "BMW 528", "BMW M3",
-                "the BMW 320", "VW Jetta", "BMW M3", "BMW M3", "BMW M3", "BMW M3", "BMW M3", "BMW M3");
+        List<Map<String, Object>> products = createProducts("ProductName", "foobar", "foobar", "foobar", "foobar",
+                "foobar", "foobar", "fooba", "fooba", "fooba", "fooba", "foo", "asd");
         indexProducts(products);
 
-        SuggestionQuery query = new SuggestionQuery(index, type, "ProductName.keyword", "b")
-                .suggestType("full").analyzer("simple").sortByFrequency().size(10);
+        SuggestionQuery query = new SuggestionQuery(index, type, "ProductName.keyword", "foo")
+                .analyzer("simple").sortByFrequency().size(10);
         Map<String,Long> suggestions = getWeightedSuggestions(query);
         
         System.out.println(suggestions);
         
-        assertTrue(suggestions.get("BMW M3") > suggestions.get("BMW 318"));
-        assertTrue(suggestions.get("BMW M3") > suggestions.get("BMW 528"));
-        assertTrue(suggestions.get("BMW 318") > suggestions.get("BMW 528"));
+        assertTrue(suggestions.get("foobar") > suggestions.get("fooba"));
+        assertTrue(suggestions.get("fooba") > suggestions.get("foo"));
         
-        assertSuggestions(Lists.newArrayList(suggestions.keySet()), "BMW M3", "BMW 318", "BMW 528");
+        assertSuggestions(Lists.newArrayList(suggestions.keySet()), "foobar", "fooba", "foo");
     }
     
     @Test

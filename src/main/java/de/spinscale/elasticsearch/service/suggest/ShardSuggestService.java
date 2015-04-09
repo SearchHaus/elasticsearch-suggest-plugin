@@ -107,14 +107,13 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                     @Override
                     public Lookup load(String field) throws Exception {
                         Lookup lookup;
-                      	if (useWfst)
-                          	lookup = new WFSTCompletionLookup(false);
-                       	else
-                       		if (buckets <= 255 && buckets >= 0)
-                           		lookup = new FSTCompletionLookup(buckets, true);
-                           	else
-                           		lookup = new FSTCompletionLookup(10, true);
-                       	
+                        if (useWfst)
+                        	lookup = new WFSTCompletionLookup(false);
+                       	else {
+                       		if (buckets > 255 || buckets < 0)
+                           		throw new ElasticsearchException("Buckets for FST have to be 0 <= buckets <= 255");
+                           	lookup = new FSTCompletionLookup(10, true);
+                       	}
                        	lookup.build(dictCache.getUnchecked(field));
                         return lookup;
                     }
@@ -260,15 +259,14 @@ public class ShardSuggestService extends AbstractIndexShardComponent {
                     .lookup(shardSuggestRequest.term(), false, shardSuggestRequest.size()));
 
         } else {
+        	// 2nd argument of lookup: 'onlyMorePopular' can't be used with WSFTLookup
         	lookupResults.addAll(lookupCache.getUnchecked(shardSuggestRequest.field()).lookup(shardSuggestRequest.term(), !useWfst, shardSuggestRequest.size() + 1));
-            
             Map<String,Long> suggestions = new HashMap<String,Long>();
             for (LookupResult result : lookupResults)
             	suggestions.put(result.key.toString(), result.value);
-            
+
             float similarity = shardSuggestRequest.similarity();
             if (similarity < 1.0f && suggestions.size() < shardSuggestRequest.size()) {
-                suggestions.clear();
                 for (String suggestion : getSimilarSuggestions(shardSuggestRequest))
                 	suggestions.put(suggestion, 0L);
             }
